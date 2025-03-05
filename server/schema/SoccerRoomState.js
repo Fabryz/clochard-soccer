@@ -64,6 +64,7 @@ class SoccerRoomState extends Schema {
     this.gameState = 'waiting';
     this.countdown = 5;
     this.winner = '';
+    this.timeRemaining = 180; // 3 minuti in secondi
   }
 }
 
@@ -73,7 +74,8 @@ schema.defineTypes(SoccerRoomState, {
   scores: Scores,
   gameState: 'string',
   countdown: 'number',
-  winner: 'string'
+  winner: 'string',
+  timeRemaining: 'number'
 });
 
 module.exports = {

@@ -12,6 +12,7 @@ class SoccerRoom extends colyseus.Room {
   static MAX_SCORE = 3;
   static COUNTDOWN_SECONDS = 5;
   static PHYSICS_UPDATE_RATE = 1000 / 60; // 60 FPS
+  static GAME_DURATION_SECONDS = 180; // 3 minuti
 
   onCreate(options) {
     console.log('Creating new SoccerRoom:', this.roomId);
@@ -158,6 +159,37 @@ class SoccerRoom extends colyseus.Room {
         clearInterval(countdownInterval);
         this.state.gameState = 'playing';
         console.log('Game started!');
+        
+        // Iniziamo il timer di gioco quando inizia la partita
+        this.startGameTimer();
+      }
+    }, 1000);
+  }
+  
+  startGameTimer() {
+    // Impostiamo il tempo rimanente al valore iniziale
+    this.state.timeRemaining = SoccerRoom.GAME_DURATION_SECONDS;
+    
+    // Creiamo un intervallo che decrementa il tempo ogni secondo
+    this.gameTimerInterval = setInterval(() => {
+      this.state.timeRemaining--;
+      
+      // Se il tempo è scaduto, terminiamo la partita
+      if (this.state.timeRemaining <= 0) {
+        clearInterval(this.gameTimerInterval);
+        
+        // Determiniamo il vincitore in base al punteggio
+        if (this.state.scores.red > this.state.scores.blue) {
+          this.state.winner = 'red';
+        } else if (this.state.scores.blue > this.state.scores.red) {
+          this.state.winner = 'blue';
+        } else {
+          this.state.winner = 'draw'; // Pareggio
+        }
+        
+        // Cambiamo lo stato del gioco
+        this.state.gameState = 'gameOver';
+        console.log(`Game over! Winner: ${this.state.winner}`);
       }
     }, 1000);
   }
@@ -193,6 +225,9 @@ class SoccerRoom extends colyseus.Room {
       player.x = Math.max(SoccerRoom.PLAYER_RADIUS, Math.min(SoccerRoom.FIELD_WIDTH - SoccerRoom.PLAYER_RADIUS, player.x));
       player.y = Math.max(SoccerRoom.PLAYER_RADIUS, Math.min(SoccerRoom.FIELD_HEIGHT - SoccerRoom.PLAYER_RADIUS, player.y));
     });
+    
+    // Gestione delle collisioni tra giocatori
+    this.handlePlayerCollisions();
 
     // Update ball physics
     this.updateBall();
@@ -287,6 +322,72 @@ class SoccerRoom extends colyseus.Room {
     });
   }
 
+  handlePlayerCollisions() {
+    const players = [];
+    
+    // Convertiamo la MapSchema in un array per facilitare l'iterazione
+    this.state.players.forEach((player, sessionId) => {
+      // Aggiungiamo l'id del giocatore all'oggetto per identificarlo
+      player._id = sessionId;
+      players.push(player);
+    });
+    
+    // Controlliamo le collisioni tra ogni coppia di giocatori
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i + 1; j < players.length; j++) {
+        const player1 = players[i];
+        const player2 = players[j];
+        
+        // Calcoliamo la distanza tra i due giocatori
+        const dx = player2.x - player1.x;
+        const dy = player2.y - player1.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Se la distanza è minore della somma dei raggi, abbiamo una collisione
+        const minDistance = SoccerRoom.PLAYER_RADIUS * 2;
+        
+        if (distance < minDistance) {
+          // Calcoliamo la normale della collisione
+          const nx = dx / distance;
+          const ny = dy / distance;
+          
+          // Calcoliamo la profondità della penetrazione
+          const penetrationDepth = minDistance - distance;
+          
+          // Spostiamo i giocatori per evitare sovrapposizioni
+          const moveX = nx * penetrationDepth * 0.5;
+          const moveY = ny * penetrationDepth * 0.5;
+          
+          // Spostiamo i giocatori in direzioni opposte
+          player1.x -= moveX;
+          player1.y -= moveY;
+          player2.x += moveX;
+          player2.y += moveY;
+          
+          // Calcoliamo la velocità relativa lungo la normale
+          const vx = player2.velocityX - player1.velocityX;
+          const vy = player2.velocityY - player1.velocityY;
+          const vDotN = vx * nx + vy * ny;
+          
+          // Se i giocatori si stanno allontanando, non applichiamo l'impulso
+          if (vDotN > 0) continue;
+          
+          // Coefficiente di restituzione (elasticità della collisione)
+          const restitution = 0.5;
+          
+          // Calcoliamo l'impulso
+          const impulse = -(1 + restitution) * vDotN;
+          
+          // Applichiamo l'impulso ai giocatori
+          player1.velocityX -= impulse * nx;
+          player1.velocityY -= impulse * ny;
+          player2.velocityX += impulse * nx;
+          player2.velocityY += impulse * ny;
+        }
+      }
+    }
+  }
+  
   checkGoals() {
     const ball = this.state.ball;
     
@@ -338,9 +439,14 @@ class SoccerRoom extends colyseus.Room {
   }
 
   endGame(winner) {
-    this.state.gameState = 'finished';
+    this.state.gameState = 'gameOver';
     this.state.winner = winner;
     console.log(`Game over! ${winner} team wins!`);
+    
+    // Fermiamo il timer di gioco
+    if (this.gameTimerInterval) {
+      clearInterval(this.gameTimerInterval);
+    }
     
     // Reset the game after a delay
     setTimeout(() => {

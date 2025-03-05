@@ -21,6 +21,14 @@ let keyState = {
     d: false
 };
 
+// Animazione goal
+let goalAnimation = {
+    active: false,
+    startTime: 0,
+    duration: 3000, // 3 secondi
+    text: 'GOAL!'
+};
+
 // Game assets
 const playerSprites = {
     red: new Image(),
@@ -51,6 +59,7 @@ const countdownContainer = document.getElementById('countdown-container');
 const countdownElement = document.getElementById('countdown');
 const redScoreElement = document.getElementById('red-score');
 const blueScoreElement = document.getElementById('blue-score');
+const timeRemainingElement = document.getElementById('time-remaining');
 const winnerTextElement = document.getElementById('winner-text');
 const playAgainButton = document.getElementById('play-again-button');
 
@@ -141,9 +150,29 @@ function setupRoomHandlers() {
 
 // Update game state based on server state
 function updateGameState(state) {
+    // Controlla se c'è stato un goal (confrontando i punteggi precedenti con quelli attuali)
+    if (room && room.state) {
+        const prevRedScore = parseInt(redScoreElement.textContent);
+        const prevBlueScore = parseInt(blueScoreElement.textContent);
+        
+        if (state.scores.red > prevRedScore || state.scores.blue > prevBlueScore) {
+            // Attiva l'animazione del goal
+            goalAnimation.active = true;
+            goalAnimation.startTime = Date.now();
+            goalAnimation.text = 'GOAL!';
+        }
+    }
+    
     // Update scores
     redScoreElement.textContent = state.scores.red;
     blueScoreElement.textContent = state.scores.blue;
+    
+    // Aggiorniamo il timer
+    if (state.timeRemaining !== undefined) {
+        const minutes = Math.floor(state.timeRemaining / 60);
+        const seconds = state.timeRemaining % 60;
+        timeRemainingElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
     
     // Handle different game states
     switch (state.gameState) {
@@ -162,13 +191,17 @@ function updateGameState(state) {
             showGameScreen();
             break;
             
+        case 'gameOver':
+            showGameOverScreen(state.winner);
+            break;
+            
         case 'finished':
             showGameOverScreen(state.winner);
             break;
     }
     
     // Render the game if we're playing
-    if (state.gameState === 'playing' || state.gameState === 'finished') {
+    if (state.gameState === 'playing' || state.gameState === 'gameOver' || state.gameState === 'finished') {
         renderGame(state);
     }
 }
@@ -264,6 +297,9 @@ function renderGame(state) {
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Aggiorniamo l'animazione del goal se attiva
+    updateGoalAnimation();
+    
     // Get current player and opponent
     const currentPlayer = state.players[currentPlayerId];
     let opponent = null;
@@ -317,6 +353,9 @@ function renderGame(state) {
     
     // Restore the original transformation state
     ctx.restore();
+    
+    // Aggiorniamo l'animazione del goal (sempre in primo piano)
+    updateGoalAnimation();
 }
 
 // Draw the soccer field
@@ -338,24 +377,36 @@ function drawField(flipped) {
     ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2);
     ctx.stroke();
     
+    // Disegniamo i nomi dei team sul campo
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    if (flipped) {
+        // Se flippato, invertiamo le posizioni dei team
+        // Nome team blu (a sinistra)
+        ctx.fillStyle = '#0000ff';
+        ctx.fillText('BLUE', FIELD_WIDTH / 4, 30);
+        
+        // Nome team rosso (a destra)
+        ctx.fillStyle = '#ff0000';
+        ctx.fillText('RED', FIELD_WIDTH * 3 / 4, 30);
+    } else {
+        // Nome team rosso (a sinistra)
+        ctx.fillStyle = '#ff0000';
+        ctx.fillText('RED', FIELD_WIDTH / 4, 30);
+        
+        // Nome team blu (a destra)
+        ctx.fillStyle = '#0000ff';
+        ctx.fillText('BLUE', FIELD_WIDTH * 3 / 4, 30);
+    }
+    
     // Draw the field border (similar to the screenshot)
     ctx.strokeStyle = '#333333';
     ctx.lineWidth = 10;
     ctx.strokeRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
     
-    // Draw team names (as in the screenshot)
-    ctx.font = 'bold 48px Arial';
-    ctx.fillStyle = '#ffff00';
-    ctx.textAlign = 'center';
-    
-    // If flipped, swap the names
-    if (flipped) {
-        ctx.fillText('MASSIMO', FIELD_WIDTH * 0.25, 80);
-        ctx.fillText('DAVIDE', FIELD_WIDTH * 0.75, 80);
-    } else {
-        ctx.fillText('DAVIDE', FIELD_WIDTH * 0.25, 80);
-        ctx.fillText('MASSIMO', FIELD_WIDTH * 0.75, 80);
-    }
+    // Non mostriamo più i nomi dei giocatori
 }
 
 // Draw the goals
@@ -478,6 +529,58 @@ function drawBall(ball, flipped) {
         BALL_RADIUS * 2,
         BALL_RADIUS * 2
     );
+}
+
+// Update and draw goal animation
+function updateGoalAnimation() {
+    if (!goalAnimation.active) return;
+    
+    const elapsedTime = Date.now() - goalAnimation.startTime;
+    const progress = Math.min(elapsedTime / goalAnimation.duration, 1);
+    
+    // Se l'animazione è finita, disattiviamola
+    if (progress >= 1) {
+        goalAnimation.active = false;
+        return;
+    }
+    
+    // Salviamo lo stato corrente del canvas
+    ctx.save();
+    
+    // Calcoliamo le dimensioni dell'animazione
+    // La dimensione aumenta fino a metà dell'animazione, poi diminuisce
+    const scale = progress < 0.5 
+        ? 1 + progress * 3 
+        : 4 - (progress - 0.5) * 6;
+    
+    // Calcoliamo l'opacità (parte al massimo e poi sfuma)
+    const opacity = 1 - Math.pow(progress, 2);
+    
+    // Impostiamo lo stile del testo
+    ctx.font = `bold ${Math.floor(70 * scale)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Disegniamo l'ombra
+    ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+    ctx.fillText(goalAnimation.text, FIELD_WIDTH / 2 + 3, FIELD_HEIGHT / 2 + 3);
+    
+    // Disegniamo il testo con un gradiente
+    const gradient = ctx.createLinearGradient(
+        FIELD_WIDTH / 2 - 100, 
+        FIELD_HEIGHT / 2 - 50, 
+        FIELD_WIDTH / 2 + 100, 
+        FIELD_HEIGHT / 2 + 50
+    );
+    gradient.addColorStop(0, `rgba(255, 255, 0, ${opacity})`);
+    gradient.addColorStop(0.5, `rgba(255, 165, 0, ${opacity})`);
+    gradient.addColorStop(1, `rgba(255, 0, 0, ${opacity})`);
+    
+    ctx.fillStyle = gradient;
+    ctx.fillText(goalAnimation.text, FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
+    
+    // Ripristiniamo lo stato del canvas
+    ctx.restore();
 }
 
 // Show the lobby screen
