@@ -404,18 +404,18 @@ class SoccerRoom extends colyseus.Room {
     const goalY = (SoccerRoom.FIELD_HEIGHT - SoccerRoom.GOAL_HEIGHT) / 2;
     const goalYMax = goalY + SoccerRoom.GOAL_HEIGHT;
     
-    // Check for left goal (blue team scores)
+    // Check for left goal (red team scores)
     if (ball.x - SoccerRoom.BALL_RADIUS <= 0 && ball.y >= goalY && ball.y <= goalYMax) {
-      this.state.scores.blue++;
-      console.log(`Goal for blue team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      this.state.scores.red++;
+      console.log(`Goal for red team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
       this.resetBall();
       this.checkWinner();
     }
     
-    // Check for right goal (red team scores)
+    // Check for right goal (blue team scores)
     if (ball.x + SoccerRoom.BALL_RADIUS >= SoccerRoom.FIELD_WIDTH && ball.y >= goalY && ball.y <= goalYMax) {
-      this.state.scores.red++;
-      console.log(`Goal for red team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      this.state.scores.blue++;
+      console.log(`Goal for blue team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
       this.resetBall();
       this.checkWinner();
     }
@@ -441,7 +441,12 @@ class SoccerRoom extends colyseus.Room {
   endGame(winner) {
     this.state.gameState = 'gameOver';
     this.state.winner = winner;
-    console.log(`Game over! ${winner} team wins!`);
+    
+    if (winner === 'draw') {
+      console.log(`Game over! It's a draw!`);
+    } else {
+      console.log(`Game over! ${winner} team wins!`);
+    }
     
     // Fermiamo il timer di gioco
     if (this.gameTimerInterval) {

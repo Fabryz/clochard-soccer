@@ -159,7 +159,20 @@ function updateGameState(state) {
             // Attiva l'animazione del goal
             goalAnimation.active = true;
             goalAnimation.startTime = Date.now();
-            goalAnimation.text = 'GOAL!';
+            
+            // Determiniamo chi ha segnato
+            const currentPlayerTeam = room && room.sessionId && room.state.players[room.sessionId] ? 
+                room.state.players[room.sessionId].team : 'red';
+            
+            // Se il punteggio del team del giocatore è aumentato, è stato lui a segnare
+            const playerScored = (currentPlayerTeam === 'red' && state.scores.red > prevRedScore) ||
+                               (currentPlayerTeam === 'blue' && state.scores.blue > prevBlueScore);
+            
+            if (playerScored) {
+                goalAnimation.text = 'YOU SCORED!';
+            } else {
+                goalAnimation.text = 'OPPONENT SCORED!';
+            }
         }
     }
     
@@ -200,8 +213,8 @@ function updateGameState(state) {
             break;
     }
     
-    // Render the game if we're playing
-    if (state.gameState === 'playing' || state.gameState === 'gameOver' || state.gameState === 'finished') {
+    // Render the game if we're playing, in countdown, or game is over
+    if (state.gameState === 'playing' || state.gameState === 'gameOver' || state.gameState === 'finished' || state.gameState === 'countdown') {
         renderGame(state);
     }
 }
@@ -297,6 +310,35 @@ function renderGame(state) {
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Se siamo in fase di countdown, mostriamo solo il campo e il countdown
+    if (state.gameState === 'countdown') {
+        // Determine if the view should be flipped based on the player's team
+        let flipped = false;
+        if (room.sessionId && room.state.players[room.sessionId]) {
+            flipped = room.state.players[room.sessionId].team === 'blue';
+        }
+        
+        // Disegniamo il campo
+        drawField(flipped);
+        
+        // Disegniamo il countdown al centro del campo
+        ctx.save();
+        if (flipped) {
+            // Resettiamo la trasformazione per il testo
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+        }
+        
+        ctx.font = 'bold 120px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(state.countdown, canvas.width / 2, canvas.height / 2);
+        
+        ctx.restore();
+        return;
+    }
+    
     // Aggiorniamo l'animazione del goal se attiva
     updateGoalAnimation();
     
@@ -377,29 +419,52 @@ function drawField(flipped) {
     ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2);
     ctx.stroke();
     
+    // Salviamo il contesto prima di disegnare il testo
+    ctx.save();
+    
+    // Resettiamo la trasformazione per il testo (in modo che non sia flippato)
+    if (flipped) {
+        ctx.translate(FIELD_WIDTH, 0);
+        ctx.scale(-1, 1);
+    }
+    
     // Disegniamo i nomi dei team sul campo
     ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    if (flipped) {
-        // Se flippato, invertiamo le posizioni dei team
-        // Nome team blu (a sinistra)
-        ctx.fillStyle = '#0000ff';
-        ctx.fillText('BLUE', FIELD_WIDTH / 4, 30);
-        
-        // Nome team rosso (a destra)
-        ctx.fillStyle = '#ff0000';
-        ctx.fillText('RED', FIELD_WIDTH * 3 / 4, 30);
+    // Determiniamo il team del giocatore corrente
+    const currentPlayerTeam = room && room.sessionId && room.state.players[room.sessionId] ? 
+        room.state.players[room.sessionId].team : 'red';
+    
+    // Determiniamo quale punteggio mostrare a sinistra e a destra
+    let leftScore, rightScore;
+    if (currentPlayerTeam === 'red') {
+        // Il giocatore rosso vede il suo punteggio a sinistra
+        leftScore = room.state.scores.red;
+        rightScore = room.state.scores.blue;
     } else {
-        // Nome team rosso (a sinistra)
-        ctx.fillStyle = '#ff0000';
-        ctx.fillText('RED', FIELD_WIDTH / 4, 30);
-        
-        // Nome team blu (a destra)
-        ctx.fillStyle = '#0000ff';
-        ctx.fillText('BLUE', FIELD_WIDTH * 3 / 4, 30);
+        // Il giocatore blu vede il suo punteggio a sinistra
+        leftScore = room.state.scores.blue;
+        rightScore = room.state.scores.red;
     }
+    
+    // Nome team a sinistra (sempre YOU)
+    ctx.fillStyle = '#ff0000';
+    ctx.fillText('YOU', FIELD_WIDTH / 4, 30);
+    
+    // Nome team a destra (sempre OPPONENT)
+    ctx.fillStyle = '#0000ff';
+    ctx.fillText('OPPONENT', FIELD_WIDTH * 3 / 4, 30);
+    
+    // Aggiungiamo i punteggi sotto i nomi dei team
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(leftScore, FIELD_WIDTH / 4, 60);
+    ctx.fillText(rightScore, FIELD_WIDTH * 3 / 4, 60);
+    
+    // Ripristiniamo il contesto
+    ctx.restore();
     
     // Draw the field border (similar to the screenshot)
     ctx.strokeStyle = '#333333';
@@ -603,9 +668,26 @@ function showGameOverScreen(winner) {
     gameScreen.classList.add('hidden');
     gameOverScreen.classList.remove('hidden');
     
+    // Determiniamo il team del giocatore corrente
+    const currentPlayerTeam = room && room.sessionId && room.state.players[room.sessionId] ? 
+        room.state.players[room.sessionId].team : 'red';
+    
     // Set winner text with appropriate color
-    winnerTextElement.textContent = winner.toUpperCase();
-    winnerTextElement.className = winner === 'red' ? 'text-red-500' : 'text-blue-500';
+    if (winner === 'draw') {
+        winnerTextElement.textContent = 'PAREGGIO';
+        winnerTextElement.className = 'text-yellow-500';
+    } else {
+        // Verifichiamo se il giocatore ha vinto o perso
+        const playerWon = winner === currentPlayerTeam;
+        
+        if (playerWon) {
+            winnerTextElement.textContent = 'HAI VINTO!';
+            winnerTextElement.className = 'text-green-500';
+        } else {
+            winnerTextElement.textContent = 'HAI PERSO!';
+            winnerTextElement.className = 'text-red-500';
+        }
+    }
 }
 
 // Initialize the game when the page loads
