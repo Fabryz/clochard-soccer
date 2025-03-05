@@ -59,7 +59,8 @@ class SoccerRoom extends colyseus.Room {
         y: data.direction.y
       };
       
-      console.log(`Player ${client.sessionId} moved with direction: ${JSON.stringify(player._direction)}`);
+      // Rimuoviamo il log eccessivo
+      // console.log(`Player ${client.sessionId} moved with direction: ${JSON.stringify(player._direction)}`);
     });
 
     // Set up physics update interval
@@ -356,19 +357,38 @@ class SoccerRoom extends colyseus.Room {
     this.resetBall();
     
     // Reset player positions
-    for (const sessionId in this.state.players) {
-      const player = this.state.players[sessionId];
+    // Usiamo il metodo forEach di MapSchema per iterare solo sui giocatori reali
+    this.state.players.forEach((player, sessionId) => {
+      // Verifichiamo che il player sia un oggetto valido
+      if (!player || typeof player !== 'object') {
+        console.log(`Invalid player at ${sessionId} during reset`);
+        return; // continue nel contesto di forEach
+      }
+      
+      // Verifichiamo che il player abbia le proprietà necessarie
+      if (typeof player.team !== 'string') {
+        console.log(`Player ${sessionId} has invalid team property:`, player.team);
+        return;
+      }
+      
       player.x = player.team === 'red' ? SoccerRoom.FIELD_WIDTH * 0.25 : SoccerRoom.FIELD_WIDTH * 0.75;
       player.y = SoccerRoom.FIELD_HEIGHT / 2;
       player.velocityX = 0;
       player.velocityY = 0;
-      player._direction = { x: 0, y: 0 };
-    }
+      
+      // Inizializziamo _direction se non esiste
+      if (!player._direction) {
+        player._direction = { x: 0, y: 0 };
+      } else {
+        player._direction.x = 0;
+        player._direction.y = 0;
+      }
+    });
     
     // Reset game state
     this.state.gameState = 'countdown';
     this.state.countdown = SoccerRoom.COUNTDOWN_SECONDS;
-    this.state.winner = null;
+    this.state.winner = '';
     
     // Start countdown for new game
     this.startCountdown();

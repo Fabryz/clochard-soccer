@@ -220,13 +220,22 @@ function handleKeyEvent(e, isDown) {
 
 // Send movement input to server
 function sendMovementInput() {
-    if (!room) return;
+    if (!room || !room.state) return;
+    
+    // Determiniamo se dobbiamo invertire i controlli
+    const currentPlayer = room.state.players[currentPlayerId];
+    const needToFlip = currentPlayer && currentPlayer.team === 'blue';
     
     // Calculate direction vector
-    const direction = {
+    let direction = {
         x: (keyState.d ? 1 : 0) - (keyState.a ? 1 : 0),
         y: (keyState.s ? 1 : 0) - (keyState.w ? 1 : 0)
     };
+    
+    // Se la vista è flippata, invertiamo la direzione orizzontale
+    if (needToFlip) {
+        direction.x = -direction.x;
+    }
     
     // Normalize if moving diagonally
     if (direction.x !== 0 && direction.y !== 0) {
@@ -252,10 +261,6 @@ function gameLoop() {
 
 // Render the game
 function renderGame(state) {
-    // Log game state
-    console.log('Rendering game state:', state);
-    console.log('Current player ID:', currentPlayerId);
-    
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -357,28 +362,81 @@ function drawField(flipped) {
 function drawGoals(flipped) {
     const goalY = (FIELD_HEIGHT - GOAL_HEIGHT) / 2;
     
-    // Left goal (red team defends)
-    ctx.fillStyle = '#555555';
-    ctx.fillRect(-GOAL_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+    // Disegniamo le linee di porta con colori più visibili
+    ctx.lineWidth = 5;
     
-    // Right goal (blue team defends)
-    ctx.fillRect(FIELD_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+    // Nella vista flippata, il giocatore blu diventa rosso e viceversa
+    // Quindi dobbiamo scambiare i colori delle porte
+    if (flipped) {
+        // Left goal (blue team defends in flipped view)
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+        ctx.fillRect(-GOAL_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        ctx.strokeStyle = '#0000ff';
+        ctx.strokeRect(-GOAL_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        
+        // Right goal (red team defends in flipped view)
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+        ctx.fillRect(FIELD_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        ctx.strokeStyle = '#ff0000';
+        ctx.strokeRect(FIELD_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        
+        // Aggiungiamo indicatori di porta sul campo
+        ctx.lineWidth = 3;
+        
+        // Left goal indicator (blue in flipped view)
+        ctx.strokeStyle = '#0000ff';
+        ctx.beginPath();
+        ctx.moveTo(5, goalY);
+        ctx.lineTo(5, goalY + GOAL_HEIGHT);
+        ctx.stroke();
+        
+        // Right goal indicator (red in flipped view)
+        ctx.strokeStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.moveTo(FIELD_WIDTH - 5, goalY);
+        ctx.lineTo(FIELD_WIDTH - 5, goalY + GOAL_HEIGHT);
+        ctx.stroke();
+    } else {
+        // Left goal (red team defends in normal view)
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+        ctx.fillRect(-GOAL_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        ctx.strokeStyle = '#ff0000';
+        ctx.strokeRect(-GOAL_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        
+        // Right goal (blue team defends in normal view)
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+        ctx.fillRect(FIELD_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        ctx.strokeStyle = '#0000ff';
+        ctx.strokeRect(FIELD_WIDTH, goalY, GOAL_WIDTH, GOAL_HEIGHT);
+        
+        // Aggiungiamo indicatori di porta sul campo
+        ctx.lineWidth = 3;
+        
+        // Left goal indicator (red in normal view)
+        ctx.strokeStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.moveTo(5, goalY);
+        ctx.lineTo(5, goalY + GOAL_HEIGHT);
+        ctx.stroke();
+        
+        // Right goal indicator (blue in normal view)
+        ctx.strokeStyle = '#0000ff';
+        ctx.beginPath();
+        ctx.moveTo(FIELD_WIDTH - 5, goalY);
+        ctx.lineTo(FIELD_WIDTH - 5, goalY + GOAL_HEIGHT);
+        ctx.stroke();
+    }
 }
 
 // Draw a player
 function drawPlayer(player, isCurrentPlayer, flipped) {
-    // Log player info
-    console.log(`Drawing player: ${isCurrentPlayer ? 'current' : 'opponent'}, team: ${player.team}, position: (${player.x}, ${player.y})`);
-    
     // Choose the correct sprite based on team
     // If flipped, we need to swap the sprites to maintain visual consistency
     let sprite;
     if (flipped) {
         sprite = player.team === 'red' ? playerSprites.blue : playerSprites.red;
-        console.log(`Flipped view, using sprite: ${player.team === 'red' ? 'blue' : 'red'}`);
     } else {
         sprite = player.team === 'red' ? playerSprites.red : playerSprites.blue;
-        console.log(`Normal view, using sprite: ${player.team}`);
     }
     
     // Verifichiamo che lo sprite sia caricato
@@ -398,7 +456,6 @@ function drawPlayer(player, isCurrentPlayer, flipped) {
         ctx.fillStyle = player.team === 'red' ? '#ff0000' : '#0000ff';
         ctx.fill();
         ctx.closePath();
-        console.log(`Sprite non caricato per il giocatore ${player.team}, usando cerchio colorato`);
     }
     
     // Highlight current player
