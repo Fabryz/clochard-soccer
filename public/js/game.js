@@ -33,6 +33,14 @@ playerSprites.red.src = '/assets/player_red.svg';
 playerSprites.blue.src = '/assets/player_blue.svg';
 ballSprite.src = '/assets/ball.svg';
 
+// Verifichiamo che gli sprite siano caricati correttamente
+playerSprites.red.onload = () => console.log('Sprite rosso caricato');
+playerSprites.red.onerror = () => console.error('Errore nel caricamento dello sprite rosso');
+playerSprites.blue.onload = () => console.log('Sprite blu caricato');
+playerSprites.blue.onerror = () => console.error('Errore nel caricamento dello sprite blu');
+ballSprite.onload = () => console.log('Sprite palla caricato');
+ballSprite.onerror = () => console.error('Errore nel caricamento dello sprite palla');
+
 // DOM elements
 const lobbyScreen = document.getElementById('lobby-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -244,6 +252,10 @@ function gameLoop() {
 
 // Render the game
 function renderGame(state) {
+    // Log game state
+    console.log('Rendering game state:', state);
+    console.log('Current player ID:', currentPlayerId);
+    
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -252,13 +264,21 @@ function renderGame(state) {
     let opponent = null;
     let opponentId = null;
     
-    for (const playerId in state.players) {
-        if (playerId !== currentPlayerId) {
-            opponent = state.players[playerId];
+    // Utilizziamo forEach di Colyseus per iterare sui giocatori
+    state.players.forEach((player, playerId) => {
+        // Ignoriamo le proprietà interne di Colyseus
+        if (playerId.startsWith('$')) return;
+        
+        // Ignoriamo il giocatore corrente
+        if (playerId === currentPlayerId) return;
+        
+        // Abbiamo trovato l'avversario
+        if (!opponent) {
+            opponent = player;
             opponentId = playerId;
-            break;
+            console.log(`Found opponent: ${playerId}, team: ${player.team}`);
         }
-    }
+    });
     
     // Determine if we need to flip the view (current player is always on the left)
     const needToFlip = currentPlayer && currentPlayer.team === 'blue';
@@ -347,23 +367,39 @@ function drawGoals(flipped) {
 
 // Draw a player
 function drawPlayer(player, isCurrentPlayer, flipped) {
+    // Log player info
+    console.log(`Drawing player: ${isCurrentPlayer ? 'current' : 'opponent'}, team: ${player.team}, position: (${player.x}, ${player.y})`);
+    
     // Choose the correct sprite based on team
     // If flipped, we need to swap the sprites to maintain visual consistency
     let sprite;
     if (flipped) {
         sprite = player.team === 'red' ? playerSprites.blue : playerSprites.red;
+        console.log(`Flipped view, using sprite: ${player.team === 'red' ? 'blue' : 'red'}`);
     } else {
         sprite = player.team === 'red' ? playerSprites.red : playerSprites.blue;
+        console.log(`Normal view, using sprite: ${player.team}`);
     }
     
-    // Draw player sprite
-    ctx.drawImage(
-        sprite,
-        player.x - PLAYER_RADIUS,
-        player.y - PLAYER_RADIUS,
-        PLAYER_RADIUS * 2,
-        PLAYER_RADIUS * 2
-    );
+    // Verifichiamo che lo sprite sia caricato
+    if (sprite.complete && sprite.naturalHeight !== 0) {
+        // Draw player sprite
+        ctx.drawImage(
+            sprite,
+            player.x - PLAYER_RADIUS,
+            player.y - PLAYER_RADIUS,
+            PLAYER_RADIUS * 2,
+            PLAYER_RADIUS * 2
+        );
+    } else {
+        // Se lo sprite non è caricato, disegniamo un cerchio colorato
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = player.team === 'red' ? '#ff0000' : '#0000ff';
+        ctx.fill();
+        ctx.closePath();
+        console.log(`Sprite non caricato per il giocatore ${player.team}, usando cerchio colorato`);
+    }
     
     // Highlight current player
     if (isCurrentPlayer) {
