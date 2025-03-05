@@ -42,12 +42,12 @@ playerSprites.blue.src = '/assets/player_blue.svg';
 ballSprite.src = '/assets/ball.svg';
 
 // Verifichiamo che gli sprite siano caricati correttamente
-playerSprites.red.onload = () => console.log('Sprite rosso caricato');
-playerSprites.red.onerror = () => console.error('Errore nel caricamento dello sprite rosso');
-playerSprites.blue.onload = () => console.log('Sprite blu caricato');
-playerSprites.blue.onerror = () => console.error('Errore nel caricamento dello sprite blu');
-ballSprite.onload = () => console.log('Sprite palla caricato');
-ballSprite.onerror = () => console.error('Errore nel caricamento dello sprite palla');
+playerSprites.red.onload = () => console.log('Red player sprite loaded');
+playerSprites.red.onerror = () => console.error('Error loading red player sprite');
+playerSprites.blue.onload = () => console.log('Blue player sprite loaded');
+playerSprites.blue.onerror = () => console.error('Error loading blue player sprite');
+ballSprite.onload = () => console.log('Ball sprite loaded');
+ballSprite.onerror = () => console.error('Error loading ball sprite');
 
 // DOM elements
 const lobbyScreen = document.getElementById('lobby-screen');
@@ -104,14 +104,14 @@ async function joinGame() {
         
         // Update UI
         joinButton.disabled = true;
-        joinButton.textContent = 'Connesso';
-        lobbyStatus.textContent = 'Connesso! In attesa di un altro giocatore...';
+        joinButton.textContent = 'Connected';
+        lobbyStatus.textContent = 'Connected! Waiting for another player...';
         
         // Set up room event handlers
         setupRoomHandlers();
     } catch (error) {
         console.error('Error joining room:', error);
-        lobbyStatus.textContent = 'Errore di connessione. Riprova.';
+        lobbyStatus.textContent = 'Connection error. Try again.';
         joinButton.disabled = false;
     }
 }
@@ -133,8 +133,8 @@ function setupRoomHandlers() {
         gameOverScreen.classList.add('hidden');
         
         joinButton.disabled = false;
-        joinButton.textContent = 'Entra in partita';
-        lobbyStatus.textContent = 'Disconnesso. Clicca per riconnetterti.';
+        joinButton.textContent = 'Enter the match';
+        lobbyStatus.textContent = 'Disconnected. Click to reconnect.';
         
         // Clear room reference
         room = null;
@@ -143,7 +143,7 @@ function setupRoomHandlers() {
     // Handle room errors
     room.onError((code, message) => {
         console.error('Room error:', code, message);
-        lobbyStatus.textContent = `Errore: ${message}. Riprova.`;
+        lobbyStatus.textContent = `Error: ${message}. Try again.`;
         joinButton.disabled = false;
     });
 }
