@@ -160,18 +160,32 @@ function updateGameState(state) {
             goalAnimation.active = true;
             goalAnimation.startTime = Date.now();
             
-            // Determiniamo chi ha segnato
-            const currentPlayerTeam = room && room.sessionId && room.state.players[room.sessionId] ? 
-                room.state.players[room.sessionId].team : 'red';
-            
-            // Se il punteggio del team del giocatore è aumentato, è stato lui a segnare
-            const playerScored = (currentPlayerTeam === 'red' && state.scores.red > prevRedScore) ||
-                               (currentPlayerTeam === 'blue' && state.scores.blue > prevBlueScore);
-            
-            if (playerScored) {
-                goalAnimation.text = 'YOU SCORED!';
+            // Determiniamo chi ha segnato usando lastScorer
+            if (state.lastScorer) {
+                const currentPlayerId = room.sessionId;
+                const scoringTeam = state.lastScorer.team;
+                const scoringPlayerId = state.lastScorer.playerId;
+                
+                console.log(`Goal info - Scoring team: ${scoringTeam}, Scoring player ID: ${scoringPlayerId}`);
+                console.log(`Current player ID: ${currentPlayerId}`);
+                
+                // Verifichiamo se il giocatore corrente ha segnato
+                if (scoringPlayerId === currentPlayerId) {
+                    goalAnimation.text = 'YOU SCORED!';
+                } else {
+                    // Verifichiamo se è un autogol
+                    const currentPlayerTeam = room.state.players[currentPlayerId].team;
+                    if (scoringTeam === currentPlayerTeam && scoringPlayerId !== currentPlayerId) {
+                        goalAnimation.text = 'TEAMMATE SCORED!'; // Non dovrebbe mai accadere in un gioco 1v1
+                    } else if (scoringTeam !== currentPlayerTeam && scoringPlayerId === currentPlayerId) {
+                        goalAnimation.text = 'OWN GOAL!'; // Autogol
+                    } else {
+                        goalAnimation.text = 'OPPONENT SCORED!';
+                    }
+                }
             } else {
-                goalAnimation.text = 'OPPONENT SCORED!';
+                // Fallback nel caso in cui lastScorer non sia disponibile
+                goalAnimation.text = 'GOAL!';
             }
         }
     }

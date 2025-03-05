@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,13 @@
         <h1 class="text-4xl font-bold mb-8 text-green-500">Clochard Soccer</h1>
         <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md mx-auto">
             <h2 class="text-2xl mb-4">Lobby</h2>
-            <p id="lobby-status" class="mb-4">In attesa di altri giocatori...</p>
+            <p id="lobby-status" class="mb-4">Waiting for other players...</p>
             <div id="countdown-container" class="hidden">
-                <p>La partita inizierà tra:</p>
+                <p>The match will start in:</p>
                 <p id="countdown" class="text-4xl font-bold text-yellow-500">5</p>
             </div>
             <button id="join-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">
-                Entra in partita
+                Enter the match
             </button>
         </div>
     </div>
@@ -27,18 +27,16 @@
     <!-- Game Screen -->
     <div id="game-screen" class="hidden container mx-auto text-center">
         <h1 class="text-2xl font-bold mb-2 text-green-500">Clochard Soccer</h1>
-        <div class="flex justify-between items-center mb-4">
-            <div class="text-red-500 font-bold text-xl hidden">RED: <span id="red-score">0</span></div>
+        <div class="flex justify-center items-center mb-4">
             <div class="text-center">
                 <div class="text-yellow-400 font-bold text-xl">TIME: <span id="time-remaining">03:00</span></div>
             </div>
-            <div class="text-blue-500 font-bold text-xl hidden">BLUE: <span id="blue-score">0</span></div>
         </div>
         
         <canvas id="game-canvas" width="800" height="600" class="border-4 border-gray-700 bg-green-700 mx-auto"></canvas>
         
         <div class="mt-4 text-sm text-gray-400">
-            Usa i tasti WASD per muoverti
+            Use the WASD keys to move
         </div>
     </div>
 

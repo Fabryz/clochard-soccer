@@ -1,5 +1,5 @@
 const colyseus = require('colyseus');
-const { SoccerRoomState, Player } = require('../schema/SoccerRoomState');
+const { SoccerRoomState, Player, LastScorer } = require('../schema/SoccerRoomState');
 
 class SoccerRoom extends colyseus.Room {
   // Game constants
@@ -160,6 +160,9 @@ class SoccerRoom extends colyseus.Room {
         this.state.gameState = 'playing';
         console.log('Game started!');
         
+        // Inizializziamo lastScorer
+        this.state.lastScorer = new LastScorer();
+        
         // Iniziamo il timer di gioco quando inizia la partita
         this.startGameTimer();
       }
@@ -318,6 +321,13 @@ class SoccerRoom extends colyseus.Room {
         const newDistance = SoccerRoom.BALL_RADIUS + SoccerRoom.PLAYER_RADIUS;
         ball.x = player.x + Math.cos(angle) * newDistance;
         ball.y = player.y + Math.sin(angle) * newDistance;
+        
+        // Registriamo l'ultimo giocatore che ha toccato la palla
+        if (!ball.lastTouchedBy) {
+          ball.lastTouchedBy = {};
+        }
+        ball.lastTouchedBy = sessionId;
+        console.log(`Ball touched by player: ${sessionId}`);
       }
     });
   }
@@ -404,18 +414,96 @@ class SoccerRoom extends colyseus.Room {
     const goalY = (SoccerRoom.FIELD_HEIGHT - SoccerRoom.GOAL_HEIGHT) / 2;
     const goalYMax = goalY + SoccerRoom.GOAL_HEIGHT;
     
-    // Check for left goal (red team scores)
+    // Check for left goal (goal nella porta sinistra - porta del team RED)
     if (ball.x - SoccerRoom.BALL_RADIUS <= 0 && ball.y >= goalY && ball.y <= goalYMax) {
-      this.state.scores.red++;
-      console.log(`Goal for red team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      // Troviamo l'ultimo giocatore che ha toccato la palla
+      const lastTouchPlayerId = this.state.ball.lastTouchedBy || null;
+      let scoringTeam = 'blue'; // Il team blu segna nella porta rossa (sinistra)
+      
+      // Se abbiamo l'ID dell'ultimo giocatore che ha toccato la palla
+      if (lastTouchPlayerId) {
+        // Troviamo il team del giocatore
+        const scoringPlayer = this.state.players.get(lastTouchPlayerId);
+        if (scoringPlayer) {
+          // Se un giocatore blu ha toccato per ultimo la palla ed è entrata nella porta sinistra (rossa)
+          // è un gol normale, quindi il punto va al team blu
+          // Se un giocatore rosso ha toccato per ultimo la palla ed è entrata nella porta sinistra (rossa)
+          // è un autogol, quindi il punto va comunque al team blu
+          scoringTeam = 'blue';
+        }
+      }
+      
+      // Aggiorniamo il punteggio - segna sempre il blu nella porta sinistra
+      this.state.scores.blue++;
+      
+      // Determiniamo se è un autogol o un gol normale
+      let isOwnGoal = false;
+      if (lastTouchPlayerId) {
+        const scoringPlayer = this.state.players.get(lastTouchPlayerId);
+        if (scoringPlayer && scoringPlayer.team === 'red') {
+          isOwnGoal = true;
+          console.log(`Goal for blue team! (Own goal by red player: ${lastTouchPlayerId})`);
+        } else {
+          console.log(`Goal for blue team! Scored by player: ${lastTouchPlayerId}`);
+        }
+      } else {
+        console.log(`Goal for blue team! Scored by unknown player`);
+      }
+      
+      // Registriamo chi ha segnato
+      this.state.lastScorer = new LastScorer();
+      this.state.lastScorer.team = scoringTeam;
+      this.state.lastScorer.playerId = lastTouchPlayerId;
+      
+      console.log(`Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      
       this.resetBall();
       this.checkWinner();
     }
     
-    // Check for right goal (blue team scores)
+    // Check for right goal (goal nella porta destra - porta del team BLUE)
     if (ball.x + SoccerRoom.BALL_RADIUS >= SoccerRoom.FIELD_WIDTH && ball.y >= goalY && ball.y <= goalYMax) {
-      this.state.scores.blue++;
-      console.log(`Goal for blue team! Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      // Troviamo l'ultimo giocatore che ha toccato la palla
+      const lastTouchPlayerId = this.state.ball.lastTouchedBy || null;
+      let scoringTeam = 'red'; // Il team rosso segna nella porta blu (destra)
+      
+      // Se abbiamo l'ID dell'ultimo giocatore che ha toccato la palla
+      if (lastTouchPlayerId) {
+        // Troviamo il team del giocatore
+        const scoringPlayer = this.state.players.get(lastTouchPlayerId);
+        if (scoringPlayer) {
+          // Se un giocatore rosso ha toccato per ultimo la palla ed è entrata nella porta destra (blu)
+          // è un gol normale, quindi il punto va al team rosso
+          // Se un giocatore blu ha toccato per ultimo la palla ed è entrata nella porta destra (blu)
+          // è un autogol, quindi il punto va comunque al team rosso
+          scoringTeam = 'red';
+        }
+      }
+      
+      // Aggiorniamo il punteggio - segna sempre il rosso nella porta destra
+      this.state.scores.red++;
+      
+      // Determiniamo se è un autogol o un gol normale
+      let isOwnGoal = false;
+      if (lastTouchPlayerId) {
+        const scoringPlayer = this.state.players.get(lastTouchPlayerId);
+        if (scoringPlayer && scoringPlayer.team === 'blue') {
+          isOwnGoal = true;
+          console.log(`Goal for red team! (Own goal by blue player: ${lastTouchPlayerId})`);
+        } else {
+          console.log(`Goal for red team! Scored by player: ${lastTouchPlayerId}`);
+        }
+      } else {
+        console.log(`Goal for red team! Scored by unknown player`);
+      }
+      
+      // Registriamo chi ha segnato
+      this.state.lastScorer = new LastScorer();
+      this.state.lastScorer.team = scoringTeam;
+      this.state.lastScorer.playerId = lastTouchPlayerId;
+      
+      console.log(`Score: Red ${this.state.scores.red} - Blue ${this.state.scores.blue}`);
+      
       this.resetBall();
       this.checkWinner();
     }
@@ -427,6 +515,27 @@ class SoccerRoom extends colyseus.Room {
     this.state.ball.y = SoccerRoom.FIELD_HEIGHT / 2;
     this.state.ball.velocityX = 0;
     this.state.ball.velocityY = 0;
+    
+    // Reset player positions after a goal
+    this.resetPlayerPositions();
+  }
+  
+  resetPlayerPositions() {
+    // Reset all players to their starting positions
+    this.state.players.forEach((player, sessionId) => {
+      // Determine if this is the first player (red) or second player (blue)
+      const isRedTeam = player.team === 'red';
+      
+      // Set the starting position based on team
+      player.x = isRedTeam ? SoccerRoom.FIELD_WIDTH * 0.25 : SoccerRoom.FIELD_WIDTH * 0.75;
+      player.y = SoccerRoom.FIELD_HEIGHT / 2;
+      
+      // Reset velocity
+      player.velocityX = 0;
+      player.velocityY = 0;
+    });
+    
+    console.log('Reset player positions after goal');
   }
 
   checkWinner() {

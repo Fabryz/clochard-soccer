@@ -39,7 +39,8 @@ schema.defineTypes(Ball, {
   x: 'number',
   y: 'number',
   velocityX: 'number',
-  velocityY: 'number'
+  velocityY: 'number',
+  lastTouchedBy: 'string'
 });
 
 class Scores extends Schema {
@@ -65,8 +66,23 @@ class SoccerRoomState extends Schema {
     this.countdown = 5;
     this.winner = '';
     this.timeRemaining = 180; // 3 minuti in secondi
+    this.lastScorer = null; // { team: 'red'/'blue', playerId: 'sessionId' }
   }
 }
+
+// Definiamo uno schema per lastScorer
+class LastScorer extends Schema {
+  constructor() {
+    super();
+    this.team = '';
+    this.playerId = '';
+  }
+}
+
+schema.defineTypes(LastScorer, {
+  team: 'string',
+  playerId: 'string'
+});
 
 schema.defineTypes(SoccerRoomState, {
   players: { map: Player },
@@ -75,12 +91,14 @@ schema.defineTypes(SoccerRoomState, {
   gameState: 'string',
   countdown: 'number',
   winner: 'string',
-  timeRemaining: 'number'
+  timeRemaining: 'number',
+  lastScorer: LastScorer
 });
 
 module.exports = {
   SoccerRoomState,
   Player,
   Ball,
-  Scores
+  Scores,
+  LastScorer
 };
