@@ -1,0 +1,17 @@
+{
+  "name": "clochard-soccer",
+  "description": "A 2D multiplayer soccer game",
+  "repository": "https://github.com/fabryz/clochard-soccer",
+  "keywords": ["node", "colyseus", "multiplayer", "game", "soccer"],
+  "env": {
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Set to false to install devDependencies",
+      "value": "false"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
