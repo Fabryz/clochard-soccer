@@ -57,8 +57,7 @@ const joinButton = document.getElementById('join-button');
 const lobbyStatus = document.getElementById('lobby-status');
 const countdownContainer = document.getElementById('countdown-container');
 const countdownElement = document.getElementById('countdown');
-const redScoreElement = document.getElementById('red-score');
-const blueScoreElement = document.getElementById('blue-score');
+// Elementi punteggio rimossi dall'HTML
 const timeRemainingElement = document.getElementById('time-remaining');
 const winnerTextElement = document.getElementById('winner-text');
 const playAgainButton = document.getElementById('play-again-button');
@@ -148,13 +147,15 @@ function setupRoomHandlers() {
     });
 }
 
+// Variabili per tenere traccia dei punteggi precedenti
+let prevRedScore = 0;
+let prevBlueScore = 0;
+
 // Update game state based on server state
 function updateGameState(state) {
+    
     // Controlla se c'è stato un goal (confrontando i punteggi precedenti con quelli attuali)
     if (room && room.state) {
-        const prevRedScore = parseInt(redScoreElement.textContent);
-        const prevBlueScore = parseInt(blueScoreElement.textContent);
-        
         if (state.scores.red > prevRedScore || state.scores.blue > prevBlueScore) {
             // Attiva l'animazione del goal
             goalAnimation.active = true;
@@ -187,12 +188,12 @@ function updateGameState(state) {
                 // Fallback nel caso in cui lastScorer non sia disponibile
                 goalAnimation.text = 'GOAL!';
             }
+            
+            // Aggiorniamo i punteggi precedenti
+            prevRedScore = state.scores.red;
+            prevBlueScore = state.scores.blue;
         }
     }
-    
-    // Update scores
-    redScoreElement.textContent = state.scores.red;
-    blueScoreElement.textContent = state.scores.blue;
     
     // Aggiorniamo il timer
     if (state.timeRemaining !== undefined) {
