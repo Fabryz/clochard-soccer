@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clochard Soccer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="container mx-auto text-center">
+        <h1 class="text-4xl font-bold mb-8 text-green-500">Clochard Soccer</h1>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <h2 class="text-2xl mb-4">Lobby</h2>
+            <p id="lobby-status" class="mb-4">In attesa di altri giocatori...</p>
+            <div id="countdown-container" class="hidden">
+                <p>La partita inizierà tra:</p>
+                <p id="countdown" class="text-4xl font-bold text-yellow-500">5</p>
+            </div>
+            <button id="join-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">
+                Entra in partita
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden container mx-auto text-center">
+        <div class="flex justify-between items-center mb-4">
+            <div class="text-red-500 font-bold text-xl">Red: <span id="red-score">0</span></div>
+            <div class="text-blue-500 font-bold text-xl">Blue: <span id="blue-score">0</span></div>
+        </div>
+        
+        <canvas id="game-canvas" width="800" height="600" class="border-4 border-gray-700 bg-green-700 mx-auto"></canvas>
+        
+        <div class="mt-4 text-sm text-gray-400">
+            Usa i tasti WASD per muoverti
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="hidden container mx-auto text-center">
+        <h2 class="text-3xl font-bold mb-4">Partita Terminata!</h2>
+        <p class="text-2xl mb-6">Il vincitore è: <span id="winner-text" class="font-bold"></span></p>
+        <button id="play-again-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Gioca ancora
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/colyseus.js@^0.14.0/dist/colyseus.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
