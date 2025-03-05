@@ -78,7 +78,19 @@ function init() {
 // Connect to Colyseus server
 function connectToServer() {
     // Create Colyseus client
-    client = new Colyseus.Client('ws://localhost:3030');
+    // Determine server URL based on environment
+    const isProduction = window.location.hostname !== 'localhost';
+    let serverUrl = 'ws://localhost:3030';
+    
+    if (isProduction) {
+        // Use secure WebSocket in production (Heroku)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        serverUrl = `${protocol}//${host}`;
+    }
+    
+    console.log(`Connecting to server: ${serverUrl}`);
+    client = new Colyseus.Client(serverUrl);
     
     // Join button click handler
     joinButton.addEventListener('click', joinGame);

@@ -38,8 +38,21 @@ npm start
 
 4. Apri il browser e vai a:
 ```
-http://localhost:3000
+http://localhost:3030
 ```
+
+## Deployment su Heroku
+
+Per deployare l'applicazione su Heroku:
+
+1. Crea un account su [Heroku](https://heroku.com) se non ne hai già uno
+2. Installa Heroku CLI: `npm install -g heroku`
+3. Esegui il login: `heroku login`
+4. Crea una nuova app Heroku: `heroku create nome-app`
+5. Pusha il codice su Heroku: `git push heroku master`
+6. Apri l'app: `heroku open`
+
+Nota: Heroku supporta WebSocket, quindi il gioco multiplayer funzionerà correttamente.
 
 5. Per giocare in multiplayer, apri un'altra finestra del browser e vai allo stesso indirizzo.
 
