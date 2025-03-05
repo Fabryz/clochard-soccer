@@ -78,7 +78,19 @@ function init() {
 // Connect to Colyseus server
 function connectToServer() {
     // Create Colyseus client
-    client = new Colyseus.Client('ws://localhost:3030');
+    // Determine server URL based on environment
+    const isProduction = window.location.hostname !== 'localhost';
+    let serverUrl = 'ws://localhost:3030';
+    
+    if (isProduction) {
+        // Use secure WebSocket in production
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        serverUrl = `${protocol}//${host}`;
+    }
+    
+    console.log(`Connecting to server: ${serverUrl}`);
+    client = new Colyseus.Client(serverUrl);
     
     // Join button click handler
     joinButton.addEventListener('click', joinGame);
@@ -87,16 +99,9 @@ function connectToServer() {
 // Join the game
 async function joinGame() {
     try {
-        // First try to join an existing room with available slots
-        try {
-            room = await client.joinOrCreate('soccer_room');
-            console.log('Joined existing room:', room.id);
-        } catch (e) {
-            // If joining fails (e.g., all rooms are full), create a new room
-            console.log('Could not join existing room, creating new one');
-            room = await client.create('soccer_room');
-            console.log('Created new room:', room.id);
-        }
+        // Join or create a soccer room
+        room = await client.joinOrCreate('soccer');
+        console.log('Joined room:', room.id);
         
         // Store the current player's ID
         currentPlayerId = room.sessionId;

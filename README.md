@@ -20,6 +20,30 @@ Un gioco di calcio 2D multiplayer ispirato a Hobosoccer, sviluppato con HTML, CS
 
 ## Installazione
 
+```bash
+# Clona il repository
+git clone https://github.com/yourusername/clochard-soccer.git
+cd clochard-soccer
+
+# Installa le dipendenze
+npm install
+
+# Avvia il server in modalità sviluppo
+npm run dev
+```
+
+## Deployment su Vercel
+
+Per deployare l'applicazione su Vercel:
+
+1. Crea un account su [Vercel](https://vercel.com) se non ne hai già uno
+2. Installa Vercel CLI: `npm i -g vercel`
+3. Esegui `vercel login` e segui le istruzioni
+4. Dalla directory del progetto, esegui `vercel` per deployare
+5. Per aggiornare il deployment, esegui `vercel --prod`
+
+Nota: Il gioco utilizza WebSocket per la comunicazione in tempo reale, quindi assicurati che il tuo piano Vercel supporti questa funzionalità.
+
 1. Clona il repository:
 ```
 git clone https://github.com/fabryz/clochard-soccer.git
