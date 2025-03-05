@@ -323,11 +323,9 @@ function renderGame(state) {
         
         // Disegniamo il countdown al centro del campo
         ctx.save();
-        if (flipped) {
-            // Resettiamo la trasformazione per il testo
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-        }
+        
+        // Resettiamo completamente la trasformazione per il testo
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset alla matrice di trasformazione
         
         ctx.font = 'bold 120px Arial';
         ctx.fillStyle = '#ffffff';
@@ -674,17 +672,17 @@ function showGameOverScreen(winner) {
     
     // Set winner text with appropriate color
     if (winner === 'draw') {
-        winnerTextElement.textContent = 'PAREGGIO';
+        winnerTextElement.textContent = 'IT\'S A DRAW!';
         winnerTextElement.className = 'text-yellow-500';
     } else {
         // Verifichiamo se il giocatore ha vinto o perso
         const playerWon = winner === currentPlayerTeam;
         
         if (playerWon) {
-            winnerTextElement.textContent = 'HAI VINTO!';
+            winnerTextElement.textContent = 'YOU WIN!';
             winnerTextElement.className = 'text-green-500';
         } else {
-            winnerTextElement.textContent = 'HAI PERSO!';
+            winnerTextElement.textContent = 'YOU LOSE!';
             winnerTextElement.className = 'text-red-500';
         }
     }
