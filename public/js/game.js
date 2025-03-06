@@ -430,9 +430,11 @@ function drawField(flipped) {
     ctx.fillStyle = '#2c8c3c';
     ctx.fillRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
     
-    // Draw the center line
+    // Set white lines style
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
+    
+    // Draw the center line
     ctx.beginPath();
     ctx.moveTo(FIELD_WIDTH / 2, 0);
     ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT);
@@ -441,6 +443,41 @@ function drawField(flipped) {
     // Draw the center circle
     ctx.beginPath();
     ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Draw the field border
+    ctx.beginPath();
+    ctx.rect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
+    ctx.stroke();
+    
+    // Draw penalty areas
+    const penaltyAreaWidth = 150;
+    const penaltyAreaHeight = 300;
+    const penaltyAreaY = (FIELD_HEIGHT - penaltyAreaHeight) / 2;
+    
+    // Left penalty area
+    ctx.beginPath();
+    ctx.rect(0, penaltyAreaY, penaltyAreaWidth, penaltyAreaHeight);
+    ctx.stroke();
+    
+    // Right penalty area
+    ctx.beginPath();
+    ctx.rect(FIELD_WIDTH - penaltyAreaWidth, penaltyAreaY, penaltyAreaWidth, penaltyAreaHeight);
+    ctx.stroke();
+    
+    // Draw goal lines
+    const goalY = (FIELD_HEIGHT - GOAL_HEIGHT) / 2;
+    
+    // Left goal line
+    ctx.beginPath();
+    ctx.moveTo(0, goalY);
+    ctx.lineTo(0, goalY + GOAL_HEIGHT);
+    ctx.stroke();
+    
+    // Right goal line
+    ctx.beginPath();
+    ctx.moveTo(FIELD_WIDTH, goalY);
+    ctx.lineTo(FIELD_WIDTH, goalY + GOAL_HEIGHT);
     ctx.stroke();
     
     // Salviamo il contesto prima di disegnare il testo
@@ -489,11 +526,6 @@ function drawField(flipped) {
     
     // Ripristiniamo il contesto
     ctx.restore();
-    
-    // Draw the field border (similar to the screenshot)
-    ctx.strokeStyle = '#333333';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
     
     // Non mostriamo più i nomi dei giocatori
 }
