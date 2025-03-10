@@ -30,8 +30,9 @@ class SoccerRoom extends colyseus.Room {
     this.state.ball.velocityY = 0;
     
     // Set initial game state
-    this.state.gameState = 'waiting'; // waiting, countdown, playing, finished
+    this.state.gameState = 'waiting'; // waiting, countdown, playing, finished, playerDisconnected
     this.state.countdown = SoccerRoom.COUNTDOWN_SECONDS;
+    this.state.disconnectionCountdown = 0; // Countdown for disconnection
     this.state.winner = '';
 
     // Handle player input
@@ -120,14 +121,37 @@ class SoccerRoom extends colyseus.Room {
   onLeave(client) {
     console.log(`Player ${client.sessionId} left room ${this.roomId}`);
     
+    // Store the team of the disconnected player for notification
+    let disconnectedTeam = '';
+    if (this.state.players[client.sessionId]) {
+      disconnectedTeam = this.state.players[client.sessionId].team;
+    }
+    
     // Remove player from the game state
     delete this.state.players[client.sessionId];
     
     // Contiamo i client rimanenti
     const remainingClients = this.clients.length;
     console.log(`Remaining clients in room ${this.roomId}: ${remainingClients}`);
-
-    // Reset the game state to waiting
+    
+    // If we're in the middle of a game or in game over state and a player disconnects
+    if ((this.state.gameState === 'playing' || this.state.gameState === 'gameOver' || this.state.gameState === 'finished' || this.state.gameState === 'countdown') && remainingClients > 0) {
+      // Set the game state to playerDisconnected
+      this.state.gameState = 'playerDisconnected';
+      
+      // Broadcast a message about the disconnection
+      this.broadcast('playerDisconnected', { team: disconnectedTeam });
+      
+      // Set a 10-second countdown before closing the room
+      this.state.disconnectionCountdown = 10;
+      
+      // Start the disconnection countdown
+      this.startDisconnectionCountdown();
+      
+      return;
+    }
+    
+    // If no players left or not in a game, reset everything
     this.state.gameState = 'waiting';
     this.state.countdown = SoccerRoom.COUNTDOWN_SECONDS;
     
@@ -193,6 +217,28 @@ class SoccerRoom extends colyseus.Room {
         // Cambiamo lo stato del gioco
         this.state.gameState = 'gameOver';
         console.log(`Game over! Winner: ${this.state.winner}`);
+      }
+    }, 1000);
+  }
+  
+  startDisconnectionCountdown() {
+    console.log(`Starting disconnection countdown in room ${this.roomId}`);
+    
+    // Create an interval that decrements the disconnection countdown every second
+    this.disconnectionCountdownInterval = setInterval(() => {
+      this.state.disconnectionCountdown--;
+      
+      // If the countdown reaches zero, close the room
+      if (this.state.disconnectionCountdown <= 0) {
+        clearInterval(this.disconnectionCountdownInterval);
+        
+        console.log(`Disconnection countdown finished in room ${this.roomId}, closing room`);
+        
+        // Broadcast a message that the room is closing
+        this.broadcast('roomClosing');
+        
+        // Disconnect all clients and close the room
+        this.disconnect();
       }
     }, 1000);
   }

@@ -64,6 +64,7 @@ class SoccerRoomState extends Schema {
     this.scores = new Scores();
     this.gameState = 'waiting';
     this.countdown = 5;
+    this.disconnectionCountdown = 0; // Countdown for disconnection
     this.winner = '';
     this.timeRemaining = 180; // 3 minuti in secondi
     this.lastScorer = null; // { team: 'red'/'blue', playerId: 'sessionId' }
@@ -90,6 +91,7 @@ schema.defineTypes(SoccerRoomState, {
   scores: Scores,
   gameState: 'string',
   countdown: 'number',
+  disconnectionCountdown: 'number',
   winner: 'string',
   timeRemaining: 'number',
   lastScorer: LastScorer
