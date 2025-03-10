@@ -167,15 +167,16 @@ function setupRoomHandlers() {
     room.onLeave((code) => {
         console.log('Left room with code:', code);
         
-        // Reset UI
-        lobbyScreen.classList.remove('hidden');
-        gameScreen.classList.add('hidden');
-        gameOverScreen.classList.add('hidden');
-        
-        // Remove disconnection overlay if it exists
-        const disconnectionOverlay = document.getElementById('disconnection-overlay');
-        if (disconnectionOverlay) {
-            disconnectionOverlay.style.display = 'none';
+        if (domElements.initialized) {
+            // Reset UI
+            if (domElements.lobbyScreen) domElements.lobbyScreen.classList.remove('hidden');
+            if (domElements.gameScreen) domElements.gameScreen.classList.add('hidden');
+            if (domElements.gameOverScreen) domElements.gameOverScreen.classList.add('hidden');
+            
+            // Remove disconnection overlay if it exists
+            if (domElements.disconnectionOverlay) {
+                domElements.disconnectionOverlay.style.display = 'none';
+            }
         }
         
         // Show join button and hide connection status
@@ -881,46 +882,46 @@ function showDisconnectionMessage(disconnectedTeam) {
         domElements.disconnectionOverlay.appendChild(domElements.disconnectionMessage);
         
         // Create countdown element
-        const countdownElement = document.createElement('div');
-        countdownElement.id = 'disconnection-countdown';
-        countdownElement.style.fontSize = '48px';
-        countdownElement.style.fontWeight = 'bold';
-        disconnectionOverlay.appendChild(countdownElement);
+        domElements.disconnectionCountdown = document.createElement('div');
+        domElements.disconnectionCountdown.id = 'disconnection-countdown';
+        domElements.disconnectionCountdown.style.fontSize = '48px';
+        domElements.disconnectionCountdown.style.fontWeight = 'bold';
+        domElements.disconnectionOverlay.appendChild(domElements.disconnectionCountdown);
         
         // Create info element
         const infoElement = document.createElement('div');
         infoElement.style.fontSize = '18px';
         infoElement.style.marginTop = '20px';
         infoElement.textContent = 'Returning to lobby...';
-        disconnectionOverlay.appendChild(infoElement);
+        domElements.disconnectionOverlay.appendChild(infoElement);
     }
     
     // Update message based on disconnected team
-    const messageElement = document.getElementById('disconnection-message');
-    if (disconnectedTeam === 'red') {
-        messageElement.textContent = 'Red player disconnected!';
-        messageElement.style.color = '#ff4136';
-    } else if (disconnectedTeam === 'blue') {
-        messageElement.textContent = 'Blue player disconnected!';
-        messageElement.style.color = '#0074d9';
-    } else {
-        messageElement.textContent = 'Opponent disconnected!';
-        messageElement.style.color = '#ffffff';
+    if (domElements.disconnectionMessage) {
+        if (disconnectedTeam === 'red') {
+            domElements.disconnectionMessage.textContent = 'Red player disconnected!';
+            domElements.disconnectionMessage.style.color = '#ff4136';
+        } else if (disconnectedTeam === 'blue') {
+            domElements.disconnectionMessage.textContent = 'Blue player disconnected!';
+            domElements.disconnectionMessage.style.color = '#0074d9';
+        } else {
+            domElements.disconnectionMessage.textContent = 'Opponent disconnected!';
+            domElements.disconnectionMessage.style.color = '#ffffff';
+        }
     }
     
     // Inizializza il countdown a 10 secondi
-    if (room && room.state) {
-        const countdownElement = document.getElementById('disconnection-countdown');
-        countdownElement.textContent = room.state.disconnectionCountdown || 10;
+    if (room && room.state && domElements.disconnectionCountdown) {
+        domElements.disconnectionCountdown.textContent = room.state.disconnectionCountdown || 10;
     }
     
     // Nascondi gli altri schermi
-    lobbyScreen.classList.add('hidden');
-    gameScreen.classList.add('hidden');
-    gameOverScreen.classList.add('hidden');
+    if (domElements.lobbyScreen) domElements.lobbyScreen.classList.add('hidden');
+    if (domElements.gameScreen) domElements.gameScreen.classList.add('hidden');
+    if (domElements.gameOverScreen) domElements.gameOverScreen.classList.add('hidden');
     
     // Show the overlay
-    disconnectionOverlay.style.display = 'flex';
+    if (domElements.disconnectionOverlay) domElements.disconnectionOverlay.style.display = 'flex';
 }
 
 // Initialize the game when the page loads
