@@ -173,6 +173,11 @@ function setupRoomHandlers() {
             if (domElements.gameScreen) domElements.gameScreen.classList.add('hidden');
             if (domElements.gameOverScreen) domElements.gameOverScreen.classList.add('hidden');
             
+            // Nascondi il countdown container
+            if (domElements.countdownContainer) {
+                domElements.countdownContainer.classList.add('hidden');
+            }
+            
             // Remove disconnection overlay if it exists
             if (domElements.disconnectionOverlay) {
                 domElements.disconnectionOverlay.style.display = 'none';
@@ -808,6 +813,12 @@ function showLobbyScreen() {
     if (domElements.lobbyScreen) domElements.lobbyScreen.classList.remove('hidden');
     if (domElements.gameScreen) domElements.gameScreen.classList.add('hidden');
     if (domElements.gameOverScreen) domElements.gameOverScreen.classList.add('hidden');
+    
+    // Nascondi il countdown container di default
+    // (verrà mostrato solo quando lo stato del gioco è 'countdown')
+    if (domElements.countdownContainer) {
+        domElements.countdownContainer.classList.add('hidden');
+    }
 }
 
 // Show the game screen
